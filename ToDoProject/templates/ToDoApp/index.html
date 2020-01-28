@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container" id="content">{% csrf_token %}
+    <ul>
+        {% if todo_list %}
+            {% for todo in todo_list %}
+                <li>
+                    <div class="row">
+                        {% if todo.state %}
+                            <a class="left waves-effect" href="#"><i class="small material-icons" onclick="change_state({{ todo.id }})">check_box</i></a>
+                        {% else %}
+                            <a class="left waves-effect" href="#"><i class="small material-icons" onclick="change_state({{ todo.id }})">check_box_outline_blank</i></a>
+                        {% endif %}
+                        <div class="col s12 m6">
+                            <div class="card blue-grey darken-1">
+                                <div class="card-content white-text">
+                                    <span class="card-title"><a href="{% url 'ToDoApp:detail' todo.id %}">{{ todo.title }}</a></span>
+                                    <p>{{ todo.description }}</p>
+                                </div>
+                                <div class="card-action">
+                                    <a class="btn-floating halfway-fab waves-effect waves-light red"><i class="material-icons" onclick="delete_todo({{ todo.id }})">delete</i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        {% else %}
+            <li><div class="row"><p>No To Do are available.</p></div></li>
+        {% endif %}
+        <li><div class="row center"><div class="col s12 m6"><a class="btn-floating btn-large waves-effect waves-light green center"><i class="material-icons" onclick="create_todo()">add</i></a></div></div></li>
+    </ul>
+</div>
+
+<script>
+    function delete_todo(id)
+    {
+        $.confirm({
+            theme: "modern",
+            title: 'Please confirm',
+            content: 'url: delete_todo_modal/' + id + '/',
+            buttons: {
+                confirm: function () {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'delete_todo/' + id + '/',
+                        data: {
+                            csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                        },
+                        success: function(){
+                            setTimeout(function(){// wait for 1 secs(2)
+                                  location.reload(); // then reload the page.(3)
+                            }, 1000);
+                        }
+                    });
+                },
+                cancel: function () {
+
+                }
+            }
+        });
+    };
+
+    function create_todo()
+    {
+        $.confirm({
+            title: 'Create new To Do',
+            content: 'url:/ToDoApp/create_todo_modal/',
+            buttons: {
+                formSubmit: {
+                    text: 'Submit',
+                    btnClass: 'btn-blue',
+                    action: function () {
+                        $.ajax({
+                            type: 'POST',
+                            url: 'create_todo/',
+                            data: {
+                                new_title: $('input[name=new_title]').val(),
+                                new_description: $('input[name=new_description]').val(),
+                                new_state: $('input[name=new_state]').is(':checked'),
+                                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+                            },
+                            success: function(){
+                                  setTimeout(function(){// wait for 1 secs(2)
+                                       location.reload(); // then reload the page.(3)
+                                  }, 1000);
+                            }
+                        });
+                    }
+                },
+                cancel: function () {
+                    //close
+                }
+            },
+            onContentReady: function () {
+                $('#create_todo_form').keypress(function(e) {
+                    if(e.which == 13) {
+                        $('#create_todo_form').submit();
+                    }
+                })
+                // bind to events
+                var jc = this;
+                this.$content.find('form').on('submit', function (e) {
+                // if the user submits the form by pressing enter in the field.
+                    e.preventDefault();
+                    jc.$$formSubmit.trigger('click'); // reference the button and click it
+                });
+            }
+        });
+    }
+
+    function change_state (id)
+    {
+        $.ajax({
+            type: 'POST',
+            url: 'change_status/' + id + '/',
+            data: {
+                csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(){
+                setTimeout(function(){// wait for 1 secs(2)
+                    location.reload(); // then reload the page.(3)
+                }, 1000);
+            }
+        });
+    }
+</script>
+
+{% endblock content %}
